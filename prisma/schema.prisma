@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String
+  role      String    @default("user")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String   @default("folder")
+  color       String   @default("#6366f1")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  docs        Doc[]
+}
+
+model Doc {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String
+  content     String
+  description String?
+  categoryId  String
+  order       Int      @default(0)
+  tags        String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, slug])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  path        String   @unique
+  description String?
+  structure   String   @default("{}")
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SiteSettings {
+  id               String @id @default("singleton")
+  backgroundImage  String @default("")
+  backgroundType   String @default("gradient")
+  primaryColor     String @default("#6366f1")
+  accentColor      String @default("#8b5cf6")
+  textColor        String @default("#ffffff")
+  siteName         String @default("DevLibrary")
+  siteTagline      String @default("Your knowledge base for web & AI")
+  customCss        String @default("")
+  watchedDirectory String @default("")
+}
