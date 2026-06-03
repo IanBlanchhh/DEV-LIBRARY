@@ -17,17 +17,33 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (res.ok) {
-      router.push("/dashboard");
-    } else {
-      const d = await res.json();
-      setError(d.error || "Login failed");
+      if (res.ok) {
+        router.push("/dashboard");
+        return;
+      }
+
+      // Try to read a JSON error, but don't blow up if the body isn't JSON
+      // (e.g. a 500 HTML error page) — that was causing an infinite spinner.
+      let message = `Login failed (server error ${res.status}).`;
+      try {
+        const d = await res.json();
+        if (d?.error) message = d.error;
+      } catch {
+        if (res.status >= 500) {
+          message = "Server error — the site likely can't reach its database. Check the Vercel environment variables (TURSO_DATABASE_URL / TURSO_AUTH_TOKEN) and redeploy.";
+        }
+      }
+      setError(message);
+    } catch {
+      setError("Network error — couldn't reach the server. Try again.");
+    } finally {
       setLoading(false);
     }
   };
